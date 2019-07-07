@@ -94,8 +94,6 @@ class TicketManager:
             time_is_up = (datetime.now() - start_time).seconds >= reservation_minutes*60
             if time_is_up:
                 self._withdraw_reservation(connection, ticket_id)
-        connection.commit()
-        connection.close()
 
     def _withdraw_reservation(self, connection, ticket_id):
         logging.debug(f"Reservation of ticket number {ticket_id}  withdrawn.")
