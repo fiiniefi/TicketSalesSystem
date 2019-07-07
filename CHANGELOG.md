@@ -1,3 +1,7 @@
+0.1.1
+===========
+* Fixed SQL dump of ticket_system database. From now reload does not cause an error.
+
 0.1.0
 ===========
 * Introduced Ticket Sales System with the following functionalities:
