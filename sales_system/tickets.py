@@ -6,6 +6,7 @@ from mock import Mock
 from sales_system.payment import PaymentGateway
 from sales_system.connection import DBConnection
 from sales_system.exceptions import InvalidTicket
+from sales_system.metadata.settings import DB_NAME, DB_USERNAME, DB_PASSWORD
 
 
 class TicketManager:
@@ -86,7 +87,7 @@ class TicketManager:
 
     def _handle_reservation(self, ticket_id, reservation_minutes):
         start_time = datetime.now()
-        connection = DBConnection('ticket_platform', 'ticket_admin', 'qwerty')    # to be improved
+        connection = DBConnection(DB_NAME, DB_USERNAME, DB_PASSWORD)
         expr = f"SELECT * FROM reservation WHERE ticket_id={ticket_id}"
         while self._result_rowcount(connection, expr):
             sleep(0.1)
