@@ -15,7 +15,7 @@ class TicketSystem:
         # type: (Optional[Connection], Optional[str], Optional[int], Optional[str]) -> list
         """
         If called without arguments, returns all events in current state of database.
-        Otherwise, returns all events matching to values in specified parameters.
+        Otherwise, returns all events matching values in specified parameters.
 
         :param Connection connection: (optional) If not provided, function uses default
             connection defined in constructor
@@ -37,7 +37,7 @@ class TicketSystem:
         # type: (Optional[Connection], Optional[str], Optional[str]) -> list
         """
         If called without arguments, returns all available tickets in the current state of database.
-        Otherwise, returns all available tickets matching to values in specified parameters.
+        Otherwise, returns all available tickets matching values in specified parameters.
 
         :param Connection connection: (optional) If not provided, function uses default
             connection defined in constructor
@@ -63,7 +63,7 @@ class TicketSystem:
         :param Connection connection: (optional) If not provided, function uses default
             connection defined in constructor
         :param float reservation_minutes: (optional) reservation time in minutes. Defaults to 15
-        :raise InvalidTicket: when there's no ticket indicated by ticket_id in current state
+        :raise InvalidTicket: when there is no ticket indicated by ticket_id in current state
             of database
         """
         connection = self._validate_connection(connection)
@@ -73,14 +73,14 @@ class TicketSystem:
     def buy_ticket(self, ticket_id, connection=None):
         # type: (int, Optional[Connection]) -> None
         """
-        Makes a purchase of a ticket indicated by ticket_id.
+        Makes purchase of a ticket indicated by ticket_id.
 
-        :param int ticket_id: id of chosen ticket
+        :param int ticket_id: id of the chosen ticket
         :param Connection connection: (optional) If not provided, function uses default
             connection defined in constructor
         :raise CardError: when card is declined
         :raise CurrencyError: when chosen currency is not supported
-        :raise InvalidTicket: when there's no ticket indicated by ticket_id in current state
+        :raise InvalidTicket: when there is no ticket indicated by ticket_id in current state
             of database
         :raise PaymentError: when something unspecified went wrong with transaction
         """
