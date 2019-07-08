@@ -8,7 +8,9 @@ import sales_system.events
 
 @pytest.fixture(scope='module')
 def event_manager():
-    return EventManager(Mock())
+    condition_mock = Mock()
+    condition_mock.return_value = ("", None)
+    return EventManager(condition_mock)
 
 
 def test_GetEvents_PassedCorrectly(db_connection_base, event_manager, monkeypatch):
