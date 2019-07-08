@@ -15,11 +15,11 @@ class TicketManager:
 
     def get_available_tickets_info(self, connection, event_name=None, ticket_type=None):
         condition_payload = {'name': event_name, 'type': ticket_type, 'reservation_state': 'available'}
+        condition, params = self._generate_condition(**condition_payload)
         expr = "SELECT price, name, type, count(type) FROM ticket " \
                "JOIN event ON (event_id=event.id) " \
-               f"{self._generate_condition(**condition_payload)} " \
-               "GROUP BY name, type, price"
-        connection.cursor.execute(expr)
+               + condition + "GROUP BY name, type, price"
+        connection.cursor.execute(expr, params)
         return connection.cursor.fetchall()
 
     def reserve_ticket(self, connection, ticket_id, reservation_minutes=15):
@@ -27,9 +27,9 @@ class TicketManager:
             raise InvalidTicket(f"Ticket of given id ({ticket_id}) is invalid (maybe already sold?)")
 
         now = datetime.now()
-        expr = f"UPDATE ticket SET reservation_state='reserved' WHERE id={ticket_id};" \
-               f"INSERT INTO reservation (ticket_id, reservation_time) VALUES ({ticket_id}, '{now}');"
-        connection.cursor.execute(expr)
+        expr = "UPDATE ticket SET reservation_state='reserved' WHERE id=%s;" \
+               "INSERT INTO reservation (ticket_id, reservation_time) VALUES (%s, %s);"
+        connection.cursor.execute(expr, (ticket_id, ticket_id, now))
         connection.commit()
         logging.debug(f"Ticket of number {ticket_id} has been reserved.")
 
@@ -38,8 +38,8 @@ class TicketManager:
     def buy_ticket(self, connection, ticket_id):
         if not self._is_ticket_valid(connection, ticket_id):
             raise InvalidTicket(f"Ticket of given id ({ticket_id}) is invalid (maybe already sold?)")
-        expr = f"SELECT * FROM ticket WHERE id={ticket_id};"
-        connection.cursor.execute(expr)
+        expr = "SELECT * FROM ticket WHERE id=%s;"
+        connection.cursor.execute(expr, (ticket_id,))
         column_names = [column.name for column in connection.cursor.description]
         ticket_data = dict(zip(column_names, connection.cursor.fetchone()))
 
@@ -49,12 +49,12 @@ class TicketManager:
         connection.commit()
 
     def get_reservation_info(self, connection, ticket_id=None):
+        condition, params = self._generate_condition(**{'ticket.id': ticket_id})
         expr = "SELECT reservation.id, ticket_id, reservation_time, type, price, name " \
                "FROM reservation " \
                "JOIN ticket ON (ticket_id=ticket.id) " \
-               "JOIN event ON (event_id=event.id) " \
-               f"{self._generate_condition(**{'ticket.id': ticket_id})}"
-        connection.cursor.execute(expr)
+               "JOIN event ON (event_id=event.id) " + condition
+        connection.cursor.execute(expr, params)
         return connection.cursor.fetchall()
 
     def get_reservation_statistics(self, connection):
@@ -88,8 +88,8 @@ class TicketManager:
     def _handle_reservation(self, ticket_id, reservation_minutes):
         start_time = datetime.now()
         connection = DBConnection(DB_NAME, DB_USERNAME, DB_PASSWORD)
-        expr = f"SELECT * FROM reservation WHERE ticket_id={ticket_id}"
-        while self._result_rowcount(connection, expr):
+        expr = "SELECT * FROM reservation WHERE ticket_id=%s"
+        while self._result_rowcount(connection, expr, (ticket_id,)):
             sleep(0.1)
             time_is_up = (datetime.now() - start_time).seconds >= reservation_minutes*60
             if time_is_up:
@@ -97,9 +97,9 @@ class TicketManager:
 
     def _withdraw_reservation(self, connection, ticket_id):
         logging.debug(f"Reservation of ticket number {ticket_id}  withdrawn.")
-        expr = f"UPDATE ticket SET reservation_state='available' WHERE id={ticket_id};" \
-               f"DELETE FROM reservation WHERE ticket_id={ticket_id};"
-        connection.cursor.execute(expr)
+        expr = "UPDATE ticket SET reservation_state='available' WHERE id=%s;" \
+               "DELETE FROM reservation WHERE ticket_id=%s;"
+        connection.cursor.execute(expr, (ticket_id, ticket_id))
 
     def _pay_for_ticket(self, price):
         PaymentGateway().charge(price, self._get_payment_token())
@@ -108,15 +108,15 @@ class TicketManager:
         return Mock(return_value='success')
 
     def _remove_ticket(self, connection, ticket_id):
-        expr = f"DELETE FROM reservation WHERE ticket_id={ticket_id};" \
-               f"DELETE FROM ticket WHERE id={ticket_id};"
-        connection.cursor.execute(expr)
+        expr = f"DELETE FROM reservation WHERE ticket_id=%s;" \
+               f"DELETE FROM ticket WHERE id=%s;"
+        connection.cursor.execute(expr, (ticket_id, ticket_id))
 
-    def _result_rowcount(self, connection, expr):
-        connection.cursor.execute(expr)
+    def _result_rowcount(self, connection, expr, params):
+        connection.cursor.execute(expr, params)
         return connection.cursor.rowcount
 
     def _is_ticket_valid(self, connection, ticket_id):
-        expr = f"SELECT * FROM ticket WHERE id={ticket_id} AND reservation_state='available'"
-        connection.cursor.execute(expr)
+        expr = f"SELECT * FROM ticket WHERE id=%s AND reservation_state='available'"
+        connection.cursor.execute(expr, (ticket_id,))
         return connection.cursor.rowcount

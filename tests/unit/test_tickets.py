@@ -9,7 +9,9 @@ from tests.unit.connections import db_connection_base, db_connection_commit
 
 @pytest.fixture(scope='module')
 def ticket_manager():
-    return TicketManager(Mock())
+    condition_mock = Mock()
+    condition_mock.return_value = ("", None)
+    return TicketManager(condition_mock)
 
 
 def test_GetAvailableTicketsInfo_PassedCorrectly(db_connection_base, ticket_manager):

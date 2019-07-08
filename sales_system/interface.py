@@ -133,6 +133,8 @@ class TicketSystem:
         return connection
 
     def _generate_condition(self, **kwargs):
-        return reduce(lambda res, pair: res if pair[1] is None else res + f"AND {pair[0]}='{pair[1]}' ",
-                      kwargs.items(),
-                      "WHERE 1=1 ")
+        used_args = {name: value for name, value in kwargs.items() if value is not None}
+        condition = reduce(lambda res, pair: res + f"AND {pair[0]}=%({pair[0]})s ",
+                           used_args.items(),
+                           "WHERE 1=1 ")
+        return condition, used_args
